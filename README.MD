@@ -18,10 +18,10 @@ Code quality and adherence to best practices will be assessed.
 ### Backend Setup
 
 1. **Generate the Database**
-In the Backend folder
+   In the Backend folder
 
 Run the following command to create and populate the SQLite database with 100,000 assets:
-      
+
       go run cmd/db/main.go
 
 2. **Start the API Server**
@@ -37,7 +37,7 @@ The API server will be running at http://localhost:8080.
 1. **Start the Frontend**
 
 Install Dependencies
-     
+
       npm install
 
 Run the Next.js Application
@@ -57,3 +57,12 @@ Get the total count of assets:
 
     GET http://localhost:8080/assets/count
 
+# Implementation
+
+1. Update Go back end to support pagination and search by owner
+
+2. Create Pagination and search components and display the data
+
+# What need to improve
+
+Due to tight deadline, I didn't have enought time to do testing and other optimization that I had in mind
