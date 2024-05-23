@@ -4,8 +4,12 @@ import (
 	"database/sql"
 	"net/http"
 
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+
+	"github.com/gin-contrib/cors"
 )
 
 const dbFileName = "assets.db"
@@ -18,14 +22,48 @@ func main() {
 	defer db.Close()
 
 	router := gin.Default()
+    config := cors.DefaultConfig()
+    config.AllowAllOrigins = true
+    config.AllowMethods = []string{"POST", "GET", "PUT", "OPTIONS"}
+    config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Accept", "User-Agent", "Cache-Control", "Pragma"}
+    config.ExposeHeaders = []string{"Content-Length"}
+    config.AllowCredentials = true
+
+	router.Use(cors.New(config))
 
 	router.GET("/assets", func(c *gin.Context) {
 		host := c.Query("host")
+		limit := 50
+		page := 1
+		search := c.Query("search")
+
+		if c.Query("limit") != "" {
+			val, err := strconv.Atoi(c.Query("limit"))
+			if err != nil {
+				panic(err)
+			}
+			limit = val
+		}
+
+		if c.Query("page") != "" {
+			val, err := strconv.Atoi(c.Query("page"))
+			if err != nil {
+				panic(err)
+			}
+			page = val
+
+		}
+
+		offset := page*limit - limit
+
 		var rows *sql.Rows
+		var stmt *sql.Stmt
 		if host != "" {
-			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ?", "%"+host+"%")
+			stmt, err = db.Prepare("SELECT id, host, comment, ip, owner FROM assets WHERE host LIKE ? LIMIT ? OFFSET ?")
+			rows, err = stmt.Query("%"+host+"%", limit, offset)
 		} else {
-			rows, err = db.Query("SELECT id, host, comment, ip, owner FROM assets")
+			stmt, err = db.Prepare("SELECT id, host, comment, ip, owner FROM assets WHERE owner LIKE ? LIMIT ? OFFSET ?")
+			rows, err = stmt.Query("%"+search+"%", limit, offset)
 		}
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -55,7 +93,9 @@ func main() {
 
 	router.GET("/assets/count", func(c *gin.Context) {
 		var count int
-		err := db.QueryRow("SELECT COUNT(*) FROM assets").Scan(&count)
+		search := c.Query("search")
+
+		err := db.QueryRow("SELECT COUNT(*) FROM assets WHERE owner LIKE ?", "%"+search+"%").Scan(&count)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
