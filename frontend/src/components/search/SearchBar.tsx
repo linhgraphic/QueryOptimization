@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react"
+import { ChangeEvent, FormEvent, LegacyRef, MutableRefObject, useState } from "react"
 
 type SearchBarProps = {search: string, onChange: (search: string) => void}
 

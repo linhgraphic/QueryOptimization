@@ -1,9 +1,12 @@
 'use client';
+
 import { useEffect, useState } from "react"
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import Pagination from "../pagination/Pagination";
-import SearchBar from "@/app/components/search/SearchBar";
+import SearchBar from "@/components/search/SearchBar";
 import { countUrl, dataUrl } from "@/constant/env";
+import LoadingSpinner from "../ui/LoadingSpinner";
+import Scroll from "../ui/Scroll";
 
 type Filters = {
     limit:number
@@ -30,6 +33,7 @@ export default function DataTable () {
     const defaultFilters = {limit: 50, page: currentPage, search:currentSearchTerm}
 
     const [data, setData] = useState<Data>(null)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState('')
     const [filters, setFilters] = useState<Filters>(defaultFilters)
     const [itemCount, setItemCount] = useState(0)
@@ -48,7 +52,6 @@ export default function DataTable () {
         params.set('page', String(next20thPage))
         router.replace(`${pathname}?${params.toString()}`)
         setFilters({...filters, page: next20thPage})
-        console.log(next20thPage)
     }
 
     const goToPrev20pages = () => {
@@ -63,34 +66,47 @@ export default function DataTable () {
         const params = new URLSearchParams(searchParams)
         if (searchTerm) params.set('search', searchTerm)
         else params.delete('search')
+        params.set('page', '1')
         router.replace(`${pathname}?${params.toString()}`)
-        setFilters({...filters, search: searchTerm}) 
+        setFilters({...filters, page:1, search: searchTerm}) 
     }
+
+    const scrollToTop = () =>  window.scrollTo({top: 0, behavior: 'smooth'});
+    const scrollToBottom = () => window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
 
     useEffect(() => {
         const fetchItemCount = async() => {
             try {
-                const response = await fetch(countUrl)
+                const response = await fetch(`${countUrl}?search=${filters.search}`)
                 const responseData = (await response.json()).count
                 setItemCount(responseData)
             } catch{(err: any) => setError(err.message)}
         }
         fetchItemCount()
-    },[])
-
+    },[filters.search])
+    
    
     useEffect(() => {
         const fetchData = async() => {
-           try {
+            setIsLoading(true)
+            try {
                 const response = (await fetch(`${dataUrl}?limit=${filters.limit}&page=${filters.page}&search=${filters.search}`))
                 const resPonseData = await response.json()
                 if (resPonseData) {
                     setData(resPonseData)
                     setError('')
                 }
-                else setError('No Data Found. Please search with other keywords')
-                
-            } catch {(err : any) => setError(err.message)}
+                else {
+                        setError('No Data Found. Please search with other keywords')
+                        setData(null)
+                    }
+                    setIsLoading(false)
+
+            } catch {(err : any) => {
+                    setError(err.message)
+                    setIsLoading(false)
+                }
+            }
         }
         fetchData()
     },[filters])
@@ -105,22 +121,26 @@ export default function DataTable () {
         </tr>))
 
     return <>
+        <Scroll onScollTop={scrollToTop} onScrollBottom={scrollToBottom}/>
+        {isLoading && <LoadingSpinner/>}
         <SearchBar search = {filters.search} onChange={handleSearch}/>
         { data ? (
-            <div className="my-16 overflow-x-auto">
-                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                    <thead className="text-sm text-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">COMMENT</th>
-                            <th scope="col" className="px-6 py-3">HOST</th>
-                            <th scope="col" className="px-6 py-3">ID</th>
-                            <th scope="col" className="px-6 py-3">IP</th>
-                            <th scope="col" className="px-6 py-3">OWNER</th>
-                        </tr>
-                    </thead>
-                    <tbody>{dataTable}</tbody>
-                </table>
-            </div>
+            <> 
+                <div className="my-16 overflow-x-auto">
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                        <thead className="text-sm text-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">COMMENT</th>
+                                <th scope="col" className="px-6 py-3">HOST</th>
+                                <th scope="col" className="px-6 py-3">ID</th>
+                                <th scope="col" className="px-6 py-3">IP</th>
+                                <th scope="col" className="px-6 py-3">OWNER</th>
+                            </tr>
+                        </thead>
+                        <tbody>{dataTable}</tbody>
+                    </table>
+                </div>
+            </>
         ): <></> }
 
         {error && <div className = "my-16 text-sm">{error}</div>}

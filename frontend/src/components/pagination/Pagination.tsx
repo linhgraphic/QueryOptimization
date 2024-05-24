@@ -1,3 +1,5 @@
+import { MutableRefObject } from "react"
+
 type PaginationProps = {
     currentPage: number, 
     pagesCount: number,
@@ -9,36 +11,42 @@ type PaginationProps = {
 const buttonInactiveStyle = "flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
 const buttonActiveStyle = "z-10 flex items-center justify-center px-3 h-8 leading-tight text-blue-600 border border-blue-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white"
 
-export default function Pagination ({currentPage, pagesCount, handleOnPageNumberClick, goToNext20pages, goToPrev20pages }: PaginationProps) {
+export default function Pagination ({currentPage, pagesCount, handleOnPageNumberClick, goToNext20pages, goToPrev20pages}: PaginationProps) {
   
     if (pagesCount === 1) return null;
     const pages = Array.from({ length: pagesCount }, (_, i) => i + 1);
+
+    const isNext20Pages = currentPage + 20 <= pagesCount
+    const isPrev20Pages = currentPage - 20 > 0
+
+    const ranges = isNext20Pages ? pages.slice(currentPage - 1, currentPage + 20) : pages
    
     return (
             <nav aria-label="Pagination">
                 <ul className="flex items-center -space-x-px h-8 text-sm">
-                <li className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                    onClick={() => goToPrev20pages()}
-                >
-                    <span className="sr-only">Previous</span>
-                    <svg className="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
-                    </svg>
-                </li>
-                    {pages.slice(currentPage - 1, currentPage + 20).map((page) => (
-                        <li className={page === currentPage? buttonActiveStyle : buttonInactiveStyle}
-                            onClick={() => handleOnPageNumberClick(page)}>  
-                                {page}
-                        </li>
-                    ))}
-                <li className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                    onClick={() => goToNext20pages()}
-                >
-                    <span className="sr-only">Previous</span>
-                    <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
-                    </svg>
-                </li>         
+                    {isPrev20Pages && <li className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                            onClick={() => goToPrev20pages()}
+                        >
+                            <span className="sr-only">Previous</span>
+                            <svg className="w-2.5 h-2.5 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 1 1 5l4 4"/>
+                            </svg>
+                        </li>}
+                        {ranges.map((page) => (
+                            <li className={page === currentPage? buttonActiveStyle : buttonInactiveStyle}
+                                onClick={() => handleOnPageNumberClick(page)}>  
+                                    {page}
+                            </li>
+                        ))}
+                    {isNext20Pages && <li className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                            onClick={() => goToNext20pages()}
+                        >
+                            <span className="sr-only">Previous</span>
+                            <svg className="w-3 h-3 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4"/>
+                            </svg>
+                        </li>  
+                    }       
                 </ul>
             </nav>
     );
